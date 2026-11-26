@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.js';
+import { getSettings, updateSettings, getStaff, createStaff, updateStaff, getBranches, createBranch, updateShopProfile } from '../controllers/settings.js';
+const router = Router();
+router.use(authenticate);
+router.get('/', getSettings);
+router.put('/', updateSettings);
+router.get('/staff', getStaff);
+router.post('/staff', createStaff);
+router.put('/staff/:id', updateStaff);
+router.get('/branches', getBranches);
+router.post('/branches', createBranch);
+router.put('/profile', updateShopProfile);
+export default router;

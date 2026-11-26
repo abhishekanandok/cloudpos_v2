@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.js';
+import { getCustomerLedger, getSupplierLedger, addManualCustomerEntry, addManualSupplierEntry, updateCustomerEntry, deleteCustomerEntry, updateSupplierEntry, deleteSupplierEntry } from '../controllers/ledger.js';
+const router = Router();
+router.use(authenticate);
+router.get('/customer/:customerId', getCustomerLedger);
+router.get('/supplier/:supplierId', getSupplierLedger);
+router.post('/customer/entry', addManualCustomerEntry);
+router.put('/customer/entry/:id', updateCustomerEntry);
+router.delete('/customer/entry/:id', deleteCustomerEntry);
+router.post('/supplier/entry', addManualSupplierEntry);
+router.put('/supplier/entry/:id', updateSupplierEntry);
+router.delete('/supplier/entry/:id', deleteSupplierEntry);
+export default router;

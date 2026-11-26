@@ -1,0 +1,719 @@
+// CloudPOS - Complete Database Schema v2
+// PostgreSQL via Prisma ORM
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// SHOP / BUSINESS
+// ─────────────────────────────────────────────
+
+model Shop {
+  id           String       @id @default(uuid())
+  name         String
+  logo         String?
+  ownerName    String
+  mobile       String       @unique
+  email        String       @unique
+  passwordHash String
+  address      String?
+  gstNumber    String?
+  businessType BusinessType @default(RETAIL)
+  isVerified   Boolean      @default(false)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  branches     Branch[]
+  staff        Staff[]
+  categories   Category[]
+  brands       Brand[]
+  products     Product[]
+  customers    Customer[]
+  suppliers    Supplier[]
+  purchases    Purchase[]
+  sales        Sale[]
+  stockUpdates StockUpdate[]
+  settings     ShopSettings?
+  subscription Subscription?
+  expenses     Expense[]
+  cashClosings DailyCashClosing[]
+  salesmen     Salesman[]
+  drivers      Driver[]
+  vehicleStocks VehicleStock[]
+  vehicleLoads VehicleLoad[]
+
+  @@map("shops")
+}
+
+model Branch {
+  id        String   @id @default(uuid())
+  shopId    String
+  name      String
+  address   String?
+  mobile    String?
+  isMain    Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  shop              Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  staff             Staff[]
+  sales             Sale[]
+  purchases         Purchase[]
+  stockUpdates      StockUpdate[]
+  stockTransfersOut StockTransfer[] @relation("TransferFrom")
+  stockTransfersIn  StockTransfer[] @relation("TransferTo")
+
+  @@map("branches")
+}
+
+model Staff {
+  id           String    @id @default(uuid())
+  shopId       String
+  branchId     String?
+  name         String
+  email        String    @unique
+  passwordHash String
+  mobile       String?
+  role         StaffRole @default(STAFF)
+  permissions  Json?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  shop   Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  branch Branch? @relation(fields: [branchId], references: [id])
+  sales  Sale[]
+
+  @@map("staff")
+}
+
+// ─────────────────────────────────────────────
+// SALESMAN MODULE
+// ─────────────────────────────────────────────
+
+model Salesman {
+  id           String       @id @default(uuid())
+  shopId       String
+  name         String
+  mobile       String?
+  loginId      String       @unique
+  passwordHash String
+  type         SalesmanType @default(STAFF)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  shop  Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  sales Sale[]
+
+  @@map("salesmen")
+}
+
+// ─────────────────────────────────────────────
+// PRODUCTS
+// ─────────────────────────────────────────────
+
+model Category {
+  id       String    @id @default(uuid())
+  shopId   String
+  name     String
+  isActive Boolean   @default(true)
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([shopId, name])
+  @@map("categories")
+}
+
+model Brand {
+  id       String    @id @default(uuid())
+  shopId   String
+  name     String
+  isActive Boolean   @default(true)
+  shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([shopId, name])
+  @@map("brands")
+}
+
+model Product {
+  id                  String   @id @default(uuid())
+  shopId              String
+  categoryId          String?
+  brandId             String?
+  name                String
+  barcode             String?
+  unitType            String   @default("PCS")
+  purchasePrice       Decimal  @default(0) @db.Decimal(10, 2)
+  retailPrice         Decimal  @default(0) @db.Decimal(10, 2)
+  minRetailQty        Decimal  @default(1) @db.Decimal(10, 3)
+  wholesalePrice      Decimal  @default(0) @db.Decimal(10, 2)
+  minWholesaleQty     Decimal  @default(12) @db.Decimal(10, 3)
+  semiWholesalePrice  Decimal  @default(0) @db.Decimal(10, 2)
+  minSemiWholesaleQty Decimal  @default(6) @db.Decimal(10, 3)
+  salesmanPrice       Decimal  @default(0) @db.Decimal(10, 2)
+  pricingTiers        Json?    @default("[]")
+  loyaltyCoins        Decimal  @default(0) @db.Decimal(10, 2)
+  loyaltyValue        Decimal  @default(0) @db.Decimal(10, 2)
+  gstPercent          Decimal  @default(0) @db.Decimal(5, 2)
+  openingStock        Decimal  @default(0) @db.Decimal(10, 3)
+  currentStock        Decimal  @default(0) @db.Decimal(10, 3)
+  minStockAlert       Decimal  @default(0) @db.Decimal(10, 3)
+  defaultSaleType     SaleType @default(RETAIL)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  shop          Shop                @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category      Category?           @relation(fields: [categoryId], references: [id])
+  brand         Brand?              @relation(fields: [brandId], references: [id])
+  purchaseItems PurchaseItem[]
+  saleItems     SaleItem[]
+  stockUpdates  StockUpdate[]
+  transferItems StockTransferItem[]
+  vehicleStocks VehicleStock[]
+  vehicleLoadItems VehicleLoadItem[]
+
+  @@index([shopId, barcode])
+  @@map("products")
+}
+
+// ─────────────────────────────────────────────
+// CUSTOMERS & SUPPLIERS
+// ─────────────────────────────────────────────
+
+model Customer {
+  id                 String   @id @default(uuid())
+  shopId             String
+  name               String
+  mobile             String?
+  address            String?
+  gstNumber          String?
+  creditLimit        Decimal  @default(0) @db.Decimal(10, 2)
+  openingBalance     Decimal  @default(0) @db.Decimal(10, 2)
+  currentBalance     Decimal  @default(0) @db.Decimal(10, 2)
+  createdByDriverId  String?  // null = owner/staff created; set = driver created
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  shop          Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  createdByDriver Driver?        @relation("DriverCustomers", fields: [createdByDriverId], references: [id])
+  sales         Sale[]
+  ledger        CustomerLedger[]
+
+  @@map("customers")
+}
+
+model Supplier {
+  id             String   @id @default(uuid())
+  shopId         String
+  name           String
+  mobile         String?
+  address        String?
+  gstNumber      String?
+  openingBalance Decimal  @default(0) @db.Decimal(10, 2)
+  currentBalance Decimal  @default(0) @db.Decimal(10, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  shop      Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+  ledger    SupplierLedger[]
+
+  @@map("suppliers")
+}
+
+// ─────────────────────────────────────────────
+// PURCHASES
+// ─────────────────────────────────────────────
+
+model Purchase {
+  id            String      @id @default(uuid())
+  shopId        String
+  branchId      String?
+  supplierId    String?
+  invoiceNumber String?
+  purchaseDate  DateTime    @default(now())
+  subtotal      Decimal     @default(0) @db.Decimal(10, 2)
+  totalGst      Decimal     @default(0) @db.Decimal(10, 2)
+  totalDiscount Decimal     @default(0) @db.Decimal(10, 2)
+  grandTotal    Decimal     @default(0) @db.Decimal(10, 2)
+  paidAmount    Decimal     @default(0) @db.Decimal(10, 2)
+  balanceAmount Decimal     @default(0) @db.Decimal(10, 2)
+  paymentMode   PaymentMode @default(CASH)
+  isCredit      Boolean     @default(false)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  shop     Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  branch   Branch?           @relation(fields: [branchId], references: [id])
+  supplier Supplier?         @relation(fields: [supplierId], references: [id])
+  items    PurchaseItem[]
+  payments PurchasePayment[]
+
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id            String  @id @default(uuid())
+  purchaseId    String
+  productId     String
+  quantity      Decimal @db.Decimal(10, 3)
+  unitType      String  @default("PCS")
+  purchasePrice Decimal @db.Decimal(10, 2)
+  gstPercent    Decimal @default(0) @db.Decimal(5, 2)
+  gstAmount     Decimal @default(0) @db.Decimal(10, 2)
+  totalAmount   Decimal @db.Decimal(10, 2)
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@map("purchase_items")
+}
+
+model PurchasePayment {
+  id          String      @id @default(uuid())
+  purchaseId  String
+  amount      Decimal     @db.Decimal(10, 2)
+  paymentMode PaymentMode @default(CASH)
+  paidAt      DateTime    @default(now())
+  notes       String?
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_payments")
+}
+
+// ─────────────────────────────────────────────
+// SALES
+// ─────────────────────────────────────────────
+
+model Sale {
+  id            String      @id @default(uuid())
+  shopId        String
+  branchId      String?
+  customerId    String?
+  staffId       String?
+  salesmanId    String?
+  driverId      String?
+  invoiceNumber String
+  saleDate      DateTime    @default(now())
+  saleType      String      @default("RETAIL")
+  subtotal      Decimal     @default(0) @db.Decimal(10, 2)
+  totalGst      Decimal     @default(0) @db.Decimal(10, 2)
+  totalDiscount Decimal     @default(0) @db.Decimal(10, 2)
+  extraChargeName   String?
+  extraChargeAmount Decimal @default(0) @db.Decimal(10, 2)
+  previousDuesSettled Decimal @default(0) @db.Decimal(10, 2)
+  grandTotal    Decimal     @default(0) @db.Decimal(10, 2)
+  paidAmount    Decimal     @default(0) @db.Decimal(10, 2)
+  balanceAmount Decimal     @default(0) @db.Decimal(10, 2)
+  isCredit      Boolean     @default(false)
+  paymentMode   PaymentMode @default(CASH)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  shop     Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  branch   Branch?       @relation(fields: [branchId], references: [id])
+  customer Customer?     @relation(fields: [customerId], references: [id])
+  staff    Staff?        @relation(fields: [staffId], references: [id])
+  salesman Salesman?     @relation(fields: [salesmanId], references: [id])
+  driver   Driver?       @relation("DriverSales", fields: [driverId], references: [id])
+  items    SaleItem[]
+  payments SalePayment[]
+
+  @@unique([shopId, invoiceNumber])
+  @@index([shopId, saleDate])
+  @@map("sales")
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  productId   String
+  quantity    Decimal  @db.Decimal(10, 3)
+  unitType    String   @default("PCS")
+  saleType    String   @default("RETAIL")
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  discount    Decimal  @default(0) @db.Decimal(10, 2)
+  gstPercent  Decimal  @default(0) @db.Decimal(5, 2)
+  gstAmount   Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount Decimal  @db.Decimal(10, 2)
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model SalePayment {
+  id          String      @id @default(uuid())
+  saleId      String
+  amount      Decimal     @db.Decimal(10, 2)
+  paymentMode PaymentMode @default(CASH)
+  paidAt      DateTime    @default(now())
+  notes       String?
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("sale_payments")
+}
+
+// ─────────────────────────────────────────────
+// STOCK MANAGEMENT
+// ─────────────────────────────────────────────
+
+model StockUpdate {
+  id          String            @id @default(uuid())
+  shopId      String
+  branchId    String?
+  productId   String
+  previousQty Decimal           @db.Decimal(10, 3)
+  newQty      Decimal           @db.Decimal(10, 3)
+  difference  Decimal           @db.Decimal(10, 3)
+  reason      StockUpdateReason
+  notes       String?
+  createdAt   DateTime          @default(now())
+  createdBy   String?
+
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  branch  Branch? @relation(fields: [branchId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("stock_updates")
+}
+
+model StockTransfer {
+  id           String   @id @default(uuid())
+  shopId       String
+  fromBranchId String
+  toBranchId   String
+  notes        String?
+  createdAt    DateTime @default(now())
+  createdBy    String?
+
+  fromBranch Branch              @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranch   Branch              @relation("TransferTo", fields: [toBranchId], references: [id])
+  items      StockTransferItem[]
+
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id         String  @id @default(uuid())
+  transferId String
+  productId  String
+  quantity   Decimal @db.Decimal(10, 3)
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product  Product       @relation(fields: [productId], references: [id])
+
+  @@map("stock_transfer_items")
+}
+
+// ─────────────────────────────────────────────
+// LEDGERS
+// ─────────────────────────────────────────────
+
+model CustomerLedger {
+  id          String          @id @default(uuid())
+  customerId  String
+  type        LedgerEntryType
+  amount      Decimal         @db.Decimal(10, 2)
+  balance     Decimal         @db.Decimal(10, 2)
+  description String?
+  referenceId String?
+  refType     String?
+  createdAt   DateTime        @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("customer_ledger")
+}
+
+model SupplierLedger {
+  id          String          @id @default(uuid())
+  supplierId  String
+  type        LedgerEntryType
+  amount      Decimal         @db.Decimal(10, 2)
+  balance     Decimal         @db.Decimal(10, 2)
+  description String?
+  referenceId String?
+  refType     String?
+  createdAt   DateTime        @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@map("supplier_ledger")
+}
+
+// ─────────────────────────────────────────────
+// EXPENSE MANAGEMENT
+// ─────────────────────────────────────────────
+
+model ExpenseCategory {
+  id       String    @id @default(uuid())
+  shopId   String
+  name     String
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  shopId      String
+  categoryId  String?
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  expenseDate DateTime @default(now())
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  shop     Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category ExpenseCategory? @relation(fields: [categoryId], references: [id])
+
+  @@map("expenses")
+}
+
+// ─────────────────────────────────────────────
+// DAILY CASH CLOSING
+// ─────────────────────────────────────────────
+
+model DailyCashClosing {
+  id               String   @id @default(uuid())
+  shopId           String
+  closingDate      DateTime
+  expectedCash     Decimal  @db.Decimal(10, 2)
+  actualCash       Decimal  @db.Decimal(10, 2)
+  difference       Decimal  @db.Decimal(10, 2)
+  totalCashSales   Decimal  @db.Decimal(10, 2)
+  totalUpiSales    Decimal  @db.Decimal(10, 2)
+  totalCardSales   Decimal  @db.Decimal(10, 2)
+  totalCreditSales Decimal  @db.Decimal(10, 2)
+  notes            String?
+  closedBy         String?
+  createdAt        DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("daily_cash_closings")
+}
+
+// ─────────────────────────────────────────────
+// SETTINGS & SUBSCRIPTION
+// ─────────────────────────────────────────────
+
+model ShopSettings {
+  id             String  @id @default(uuid())
+  shopId         String  @unique
+  gstEnabled     Boolean @default(true)
+  invoicePrefix  String  @default("INV")
+  invoiceFooter  String?
+  currencySymbol String  @default("₹")
+  currencyFormat String  @default("INR")
+  thermalPrint   Boolean @default(false)
+  lowStockAlert  Boolean @default(true)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("shop_settings")
+}
+
+model Subscription {
+  id        String           @id @default(uuid())
+  shopId    String           @unique
+  plan      SubscriptionPlan @default(FREE)
+  startDate DateTime         @default(now())
+  endDate   DateTime?
+  isActive  Boolean          @default(true)
+  amount    Decimal          @default(0) @db.Decimal(10, 2)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum BusinessType {
+  RETAIL
+  WHOLESALE
+  BOTH
+}
+
+enum SaleType {
+  RETAIL
+  WHOLESALE
+  SEMI_WHOLESALE
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  CARD
+  CREDIT
+}
+
+enum StaffRole {
+  ADMIN
+  STAFF
+  MANAGER
+}
+
+enum SalesmanType {
+  STAFF
+  RESELLER
+}
+
+enum StockUpdateReason {
+  DAMAGE
+  EXPIRY
+  ADJUSTMENT
+  THEFT
+  MANUAL_CORRECTION
+}
+
+enum LedgerEntryType {
+  DEBIT
+  CREDIT
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+// ─────────────────────────────────────────────
+// DRIVER / VEHICLE MODULE
+// ─────────────────────────────────────────────
+
+model Driver {
+  id           String   @id @default(uuid())
+  shopId       String
+  name         String
+  mobile       String?
+  loginId      String   @unique
+  passwordHash String
+  vehicle      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shop          Shop            @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  vehicleStocks VehicleStock[]
+  vehicleLoads  VehicleLoad[]
+  sales         Sale[]          @relation("DriverSales")
+  activityLogs  DriverLog[]
+  trips         DriverTrip[]
+  customers     Customer[]      @relation("DriverCustomers")
+
+  @@map("drivers")
+}
+
+model VehicleStock {
+  id        String   @id @default(uuid())
+  shopId    String
+  driverId  String
+  productId String
+  quantity  Decimal  @default(0) @db.Decimal(10, 3)
+  updatedAt DateTime @updatedAt
+
+  shop    Shop    @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([driverId, productId])
+  @@map("vehicle_stocks")
+}
+
+model VehicleLoad {
+  id        String          @id @default(uuid())
+  shopId    String
+  driverId  String
+  type      VehicleLoadType @default(LOAD)
+  notes     String?
+  loadDate  DateTime        @default(now())
+  createdAt DateTime        @default(now())
+  tripId    String?
+
+  shop    Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  driver  Driver            @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  items   VehicleLoadItem[]
+  trip    DriverTrip?       @relation("TripLoads", fields: [tripId], references: [id])
+
+  @@map("vehicle_loads")
+}
+
+model VehicleLoadItem {
+  id       String  @id @default(uuid())
+  loadId   String
+  productId String
+  quantity  Decimal @db.Decimal(10, 3)
+
+  load    VehicleLoad @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  product Product     @relation(fields: [productId], references: [id])
+
+  @@map("vehicle_load_items")
+}
+
+model DriverLog {
+  id        String   @id @default(uuid())
+  shopId    String
+  driverId  String
+  action    String
+  details   String?
+  amount    Decimal? @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("driver_logs")
+}
+
+enum VehicleLoadType {
+  LOAD
+  UNLOAD
+}
+
+// ─────────────────────────────────────────────
+// DRIVER TRIP SETTLEMENT
+// ─────────────────────────────────────────────
+
+model DriverTrip {
+  id          String      @id @default(uuid())
+  shopId      String
+  driverId    String
+  tripDate    DateTime    @default(now())
+  status      TripStatus  @default(OPEN)
+  notes       String?
+  closedAt    DateTime?
+  createdAt   DateTime    @default(now())
+
+  driver      Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  loadItems   VehicleLoad[]  @relation("TripLoads")
+  
+  @@map("driver_trips")
+}
+
+enum TripStatus {
+  OPEN
+  CLOSED
+}

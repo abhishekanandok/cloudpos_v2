@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.js';
+import { getStockHistory, adjustStock, bulkAdjust, addToStock, editStockHistory } from '../controllers/stock.js';
+const router = Router();
+router.use(authenticate);
+router.get('/history', getStockHistory);
+router.post('/adjust', adjustStock);
+router.post('/add-to-stock', addToStock);
+router.post('/bulk-adjust', bulkAdjust);
+router.put('/history/:id', editStockHistory);
+export default router;

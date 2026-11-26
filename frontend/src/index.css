@@ -1,0 +1,222 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 active:bg-slate-100;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white
+           focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+           placeholder:text-slate-400 transition-all duration-150;
+  }
+
+  .input-error {
+    @apply border-red-400 focus:ring-red-400/30 focus:border-red-400;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-slate-600 mb-1.5;
+  }
+
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+
+  .card-header {
+    @apply px-5 py-4 border-b border-slate-100 flex items-center justify-between;
+  }
+
+  .card-body {
+    @apply p-5;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-100 text-blue-700;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-100 text-emerald-700;
+  }
+
+  .badge-yellow {
+    @apply badge bg-amber-100 text-amber-700;
+  }
+
+  .badge-red {
+    @apply badge bg-red-100 text-red-700;
+  }
+
+  .badge-slate {
+    @apply badge bg-slate-100 text-slate-600;
+  }
+
+  .stat-card {
+    @apply card p-5 flex items-start gap-4;
+  }
+
+  .table-wrapper {
+    @apply overflow-x-auto rounded-lg border border-slate-200;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table thead {
+    @apply bg-slate-50;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-200;
+  }
+
+  .table td {
+    @apply px-4 py-3 text-slate-700 border-b border-slate-100;
+  }
+
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .table tbody tr:hover td {
+    @apply bg-slate-50/70;
+  }
+
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+
+  .page-title {
+    @apply text-xl font-semibold text-slate-800;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-0.5;
+  }
+}
+
+/* Sidebar active nav animation */
+.nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #2563eb;
+  border-radius: 0 2px 2px 0;
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+}
+
+.nav-item.active::before {
+  transform: scaleY(1);
+}
+
+/* ── Privacy Mask ─────────────────────────────────────────────── */
+.privacy-mask {
+  display: inline-block;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+  font-size: 0.9em;
+  user-select: none;
+}
+
+/* ── Privacy Toggle Button ────────────────────────────────────── */
+.privacy-toggle {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: none;
+  cursor: grab;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  transition: box-shadow 0.2s ease;
+}
+
+.privacy-toggle:hover {
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.26);
+}
+
+.privacy-toggle:active {
+  transform: translateY(0);
+}
+
+.privacy-toggle.hidden-mode {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.privacy-toggle.revealed-mode {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+/* ── Scan Mode Button Animation ───────────────────────────────── */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}

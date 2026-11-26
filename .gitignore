@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Local debug, scratch, and test output files
+backend/db_out.json
+backend/output.json
+backend/debug_stock.js
+backend/scratch.js
+backend/test.js
+backend/test2.js
