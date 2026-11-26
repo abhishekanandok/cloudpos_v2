@@ -2,6 +2,12 @@
 
 A full-stack, multi-tenant **Point of Sale (POS), Inventory, Accounting, and Van-Sales / Delivery Management** web application built with **React**, **Express**, **Prisma**, and **PostgreSQL**.
 
+<img width="1905" height="988" alt="image" src="https://github.com/user-attachments/assets/f0cc161e-259c-4c2a-a604-df80aa148303" />
+<img width="1367" height="900" alt="image" src="https://github.com/user-attachments/assets/64295ddb-ca83-4293-a5f9-8bb068f3122d" />
+<img width="1912" height="983" alt="image" src="https://github.com/user-attachments/assets/50b8d277-d2af-4f2b-bf4d-50bb0a57147c" />
+<img width="1918" height="992" alt="image" src="https://github.com/user-attachments/assets/52f5e0d6-fbd2-4f0d-945c-1d176164003c" />
+
+
 ---
 
 ## Tech Stack
